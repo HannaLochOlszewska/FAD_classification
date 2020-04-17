@@ -1,23 +1,35 @@
 import os
+from enum import Enum
 import pandas as pd
-from _05_characteristics import Characteristic, CharacteristicTwo
+from _05_characteristics import Characteristic, CharacteristicTwo, CharacteristicThree
 
-def get_characteristics(path_to_file, typ="", motion=""):
+class CharSet(Enum):
+    """Enum of diffusion type."""
+    One = 1
+    Two = 2
+    Three = 3
+
+def get_characteristics(char_set, path_to_file, dt, typ="", motion=""):
     data = pd.read_csv(path_to_file)
     x = data['x'].values
     y = data['y'].values
-    ch = CharacteristicTwo(x=x, y=y, dt=1 / 30, typ=typ, motion=motion, file=path_to_file)
+    if char_set == CharSet.One:
+        ch = Characteristic(x=x, y=y, dt=dt, percentage_max_n=1, typ=typ, motion=motion, file=path_to_file)
+    elif char_set == CharSet.Two:
+        ch = CharacteristicTwo(x=x, y=y, dt=dt, percentage_max_n=0.1, typ=typ, motion=motion, file=path_to_file)
+    elif char_set == CharSet.Three:
+        ch = CharacteristicThree(x=x, y=y, dt=dt, percentage_max_n=0.5, typ=typ, motion=motion, file=path_to_file)
     data = ch.data
     return data
 
-def generate_characteristics(simulation_folder, test_version=''):
+def generate_characteristics(simulation_folder, test_version='', data_type="Synthetic data", char_set=CharSet.One):
     """
     Function for generating the characteristics file for given scenario
     - characteristics are needed for featured based classifiers
     """
 
     project_directory = os.path.dirname(os.getcwd())
-    path_to_save = os.path.join(project_directory, "Data", "Synthetic data")
+    path_to_save = os.path.join(project_directory, "Data", data_type)
 
     path_to_trajectories = os.path.join(path_to_save, simulation_folder, "Trajectories")
     path_to_data = os.path.join(path_to_save, simulation_folder, "Trajectories_Stats")
@@ -31,12 +43,13 @@ def generate_characteristics(simulation_folder, test_version=''):
         print(trajectory)
         typ = initial_data[initial_data.path == trajectory]["diff_type"].values[0]
         motion = initial_data[initial_data.path == trajectory]["process"].values[0] + "_" + typ
-        d = get_characteristics(path_to_file=os.path.join(path_to_trajectories, trajectory), typ=typ, motion=motion)
+        dt = initial_data[initial_data.path == trajectory]["dt"].values[0]
+        d = get_characteristics(char_set, path_to_file=os.path.join(path_to_trajectories, trajectory), dt=dt, typ=typ, motion=motion)
         characteristics_data = pd.concat([characteristics_data, d], sort=False)
     characteristics_data.to_csv(os.path.join(path_to_characteristics_data, "characteristics.csv"), index=False)
 
-
 if __name__ == "__main__":
 
-    generate_characteristics(simulation_folder="Smaller", test_version='_best_old')
-    generate_characteristics(simulation_folder="Base", test_version='_best_old')
+    generate_characteristics(simulation_folder="Base_corr", test_version='_sta', char_set=CharSet.Three)
+    generate_characteristics(simulation_folder="Base_corr", test_version='_Wagner', char_set=CharSet.One)
+    generate_characteristics(simulation_folder="Base_corr", test_version='_best_old', char_set=CharSet.Two)

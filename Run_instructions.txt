@@ -1,0 +1,6 @@
+1. Generate dataset using: _03_generate_datasets.py
+2. Generate characteristics using: _06_generate_characteristics.py
+4. Prepare data for model: _07_split_data.py
+5. Search for hypeparameters: _08_generate_rf_hyperparameters.py or _09_generate_gb_hyperparameters.py
+6. Generate model: _10_model_generator.py
+7. Generate stats: _12_generate_stats.py

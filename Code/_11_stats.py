@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 import pandas as pd
-from sklearn.preprocessing import scale
+from sklearn.base import clone
+from sklearn.metrics import accuracy_score
 import re
 from io import StringIO
 
@@ -57,19 +58,6 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
-def class_feature_importance(X, Y, feature_importances):
-    N, M = X.shape
-    X = scale(X)
-
-    out = {}
-    for c in set(Y):
-        out[c] = dict(
-            zip(range(N), np.mean(X[Y == c, :], axis=0) * feature_importances)
-        )
-
-    return out
-
-
 def pandas_classification_report(report):
     """
     Function return df of classification report
@@ -80,3 +68,37 @@ def pandas_classification_report(report):
     report = re.sub(r" +", " ", report).replace("\n ", "\n").replace("macro avg", "avg/total").split("\nweighted")[0]
     report_df = pd.read_csv(StringIO("Classes" + report), sep=' ', index_col=0)
     return report_df
+
+def imp_df(column_names, importances):
+    df = pd.DataFrame({'feature': column_names, 'feature_importance': importances}).sort_values('feature_importance', 
+                     ascending = False).reset_index(drop = True)
+    return df
+
+
+def drop_col_feat_imp(model, X_train, y_train, random_state = 42):
+        
+    # clone the model to have the exact same specification as the one initially trained
+    model_clone = clone(model)
+    # set random_state for comparability
+    model_clone.random_state = random_state
+    # training and scoring the benchmark model
+    model_clone.fit(X_train, y_train)
+    benchmark_score = model_clone.score(X_train, y_train)
+    # list for storing feature importances
+    importances = []
+    
+    # iterating over all columns and storing feature importance (difference between benchmark and new model)
+    for col in X_train.columns:
+        print(col)
+        model_clone = clone(model)
+        model_clone.random_state = random_state
+        model_clone.fit(X_train.drop(col, axis = 1), y_train)
+        drop_col_score = model_clone.score(X_train.drop(col, axis = 1), y_train)
+        importances.append(benchmark_score - drop_col_score)
+        print(benchmark_score - drop_col_score)
+    
+    importances_df = imp_df(X_train.columns, importances)
+    return importances_df
+
+def accuracy(rf, X_train, y_train):
+    return accuracy_score(y_train, rf.predict(X_train))

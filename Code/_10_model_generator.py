@@ -47,4 +47,4 @@ def generate_model(simulation_folder, featured_model, test_version=""):
 
 if __name__ == "__main__":
 
-    generate_model(simulation_folder="Smaller", featured_model='GB', test_version='_best_old')
+    generate_model(simulation_folder="Base_corr", featured_model='GB', test_version='_best_old')

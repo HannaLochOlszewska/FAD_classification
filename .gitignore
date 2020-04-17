@@ -1,0 +1,17 @@
+
+*.txt
+*.pdf
+*.csv
+*.npy
+Code/__pycache__/_01_processes.cpython-37.pyc
+Code/__pycache__/_02_generators.cpython-37.pyc
+Code/__pycache__/_04_msd.cpython-37.pyc
+Code/__pycache__/_05_characteristics.cpython-37.pyc
+Code/__pycache__/_11_stats.cpython-37.pyc
+Code/__pycache__/_06_generate_characteristics.cpython-37.pyc
+Bem_jobs.xlsx
+*.json
+*.sav
+latex_tables.py
+Code/fix_strings_pvar.py
+!Run_instructions.txt

@@ -73,9 +73,11 @@ def generate_trajectories(simulation_folder, N=5000):
     print("Free diffusion via OU generated.")
     
     ### Generate directed Brownian motion
-    c = 0.1
-    we_free = [0, 0 + c]
-    we_super = [0 + c + EPS, 1]
+    c = 0.1    
+    # HINT: the range for v parameter is divided for two parts to allow the choice of 
+    # superdiffusion parameter around 0 - negative or positive - we pass the list of list for easy choice.
+    we_free = [[0 - c, 0 + c]]
+    we_super = [[-1, 0 - c - EPS], [0 + c + EPS, 1]]
 
     # Free diffusion
     # HINT: here we generate half of the set
@@ -113,11 +115,5 @@ def join_initial_datasets(simulation_folder):
 
 if __name__ == "__main__":
 
-#    generate_trajectories(simulation_folder="Test", N=100)
-#    join_initial_datasets(simulation_folder="Test")
-
-    generate_trajectories(simulation_folder="Smaller", N=5000)
-    join_initial_datasets(simulation_folder="Smaller")
-
-    generate_trajectories(simulation_folder="Base", N=20000)
-    join_initial_datasets(simulation_folder="Base")
+    generate_trajectories(simulation_folder="Base_corr", N=20000)
+    join_initial_datasets(simulation_folder="Base_corr")

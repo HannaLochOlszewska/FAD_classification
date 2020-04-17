@@ -6,7 +6,6 @@ from numpy import log, mean, sqrt, where, std, exp, sign
 from scipy import linalg as LA
 from scipy.optimize import curve_fit
 from sklearn.linear_model import LinearRegression
-from scipy.stats import kurtosis
 
 from _04_msd import generate_theoretical_msd_normal, generate_empirical_msd, \
                     generate_theoretical_msd_anomalous_log, generate_empirical_pvariation, \
@@ -127,8 +126,7 @@ class Characteristic(CharacteristicBase):
         self.asymmetry = self.get_asymmetry()
         self.efficiency = self.get_efficiency()
         self.trappedness = self.get_trappedness()
-        self.diff_kurtosis = self.get_kurtosis()
-        self.diff_kurtosis_corrected = self.get_kurtosis_corrected()
+        self.diff_kurtosis = self.get_kurtosis_corrected()
         self.fractal_dimension = self.get_fractal_dimension()
         self.gaussianity = self.get_gaussianity()
         self.mean_gaussianity = self.get_mean_gaussianity()
@@ -209,22 +207,6 @@ class Characteristic(CharacteristicBase):
         p = 1 - exp(0.2048 - 0.25117 * ((d * t) / (self.d / 2) ** 2))
         p = np.array([i if i > 0 else 0 for i in p])[n]
         return p
-
-
-    def get_kurtosis(self):
-        """
-        Kurtosis measures the asymmetry and peakedness of the distribution of points within a trajectory
-        :return: float, kurtosis for trajectory
-        """
-        index = where(self.eigenvalues == max(self.eigenvalues))[0][0]
-        dominant_eigenvector = self.eigenvectors[index]
-        a_prod_b = np.array([sum(np.array([self.x[i], self.y[i]]) * dominant_eigenvector) for i in range(len(self.x))])
-        b_sqrt = sqrt(dominant_eigenvector[0] ** 2 + dominant_eigenvector[1] ** 2)
-        projection_x = np.array(a_prod_b / b_sqrt) * dominant_eigenvector[0]
-        k = kurtosis(projection_x)
-        projection_y = np.array(a_prod_b / b_sqrt) * dominant_eigenvector[1]
-        K = 1 / self.N * sum((projection_x - mean(projection_x)) ** 4 / std(projection_x) ** 4) - 3
-        return K
     
     def get_kurtosis_corrected(self):
         """
@@ -386,3 +368,61 @@ class CharacteristicTwo(Characteristic):
         """
         excursion = self.d / self.get_total_displacement()
         return excursion
+    
+class CharacteristicThree(CharacteristicTwo):
+    """
+    Characteristics empirically chosen as better than previously used
+    """
+    
+    def __init__(self, x, y, dt, percentage_max_n=0.5, typ="", motion="", file=""):
+        """
+        :param x: list, x coordinates
+        :param y: list, y coordinates
+        :param dt: float, time between steps
+        :param typ: str, type of diffusion i.e sub, super, rand
+        :param motion: str, mode of diffusion eg. normal, directed
+        :param file: str, path to trajectory
+        :param percentage_max_n: float, percentage of length of the trajectory for msd generating
+        """
+        
+        CharacteristicTwo.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
+
+        
+        self.p_variations, self.p_variation_names = self.get_pvariation_test(p_list=np.arange(1,6))
+        self.maximum_ts = self.get_maximum_test_statistic()
+        
+        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha, 
+                       self.maximum_ts] + list(self.p_variations)
+        self.columns = ["file", "diff_type", "motion", "D", "alpha", 
+                        "max_ts"] + self.p_variation_names
+        
+        self.data = pd.DataFrame([self.values], columns=self.columns)
+    
+    def get_pvariation_test(self, p_list):
+        
+        max_m = int(max(0.01*self.N,5))
+        m_list = np.arange(1, max_m+1)
+        
+        test_values = []
+        p_var = generate_empirical_pvariation(self.x, self.y, p_list, m_list)
+        for i in range(len(p_list)):
+            pv = p_var[i]
+            gamma_power_fit = LinearRegression().fit(np.log(m_list).reshape(-1, 1), np.log(pv))
+            gamma = gamma_power_fit.coef_[0]
+            test_values.append(gamma)
+            
+        feature_names = ['p_var_'+str(p) for p in p_list]
+            
+        return test_values, feature_names
+    
+                        
+    def get_maximum_test_statistic(self):
+        
+        distance = np.array(
+            [self.get_displacement(self.x[i], self.y[i], self.x[0], self.y[0]) for i in range(1, self.N)])
+        d_max = np.max(distance)
+        # TODO: The sigma estimator can be improved (Briane et al., 2018)
+        sigma_2 = 1/(2 * (self.N-1) * self.dt) * np.sum(self.displacements ** 2)       
+        ts = d_max/np.sqrt(sigma_2 * self.T)
+
+        return ts

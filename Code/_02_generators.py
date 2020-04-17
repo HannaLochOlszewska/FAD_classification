@@ -69,24 +69,28 @@ def generate_ou(number_of_spt, path_to_save, simulation_folder, length_of_trajec
     """
     stats_data = pd.DataFrame([], columns=col_for_stats)
     for i in range(number_of_spt):
-        lambda_val = np.random.uniform(lambda_range[0], lambda_range[1])
-        theta_val = np.random.uniform(theta_range[0], theta_range[1])
+        lambda_x = np.random.uniform(lambda_range[0], lambda_range[1])
+        lambda_y = np.random.uniform(lambda_range[0], lambda_range[1])
+        theta_x = np.random.uniform(theta_range[0], theta_range[1])
+        theta_y = np.random.uniform(theta_range[0], theta_range[1])
         path_to_data = os.path.dirname(path_to_save)
         n = get_length_of_trajectory(is_distribution_of_selection_known, length_of_trajectory, 
                                      distribution_filename, path_to_data)
         T = (n - 1) * dt
-        x_ou, y_ou = ou_generator(n, (lambda_val, lambda_val), (theta_val, theta_val), sigma, dt)
+        x_ou, y_ou = ou_generator(n, (lambda_x, lambda_y), (theta_x, theta_y), sigma, dt)
         x_rand, y_rand = generate_noise(length=len(x_ou), n_sigma=noise_sigma)
         x = x_ou + x_rand
         y = y_ou + y_rand
         trajectory_vector = pd.DataFrame({"x": x, "y": y})
         name_of_trajectory_file = diff_type+"_ou_" + str(i) + ".txt"
-        trajectory_vector.to_csv(os.path.join(path_to_save, simulation_folder, "Trajectories", name_of_trajectory_file))
-        stats_data_mini = pd.DataFrame(
-            [[name_of_trajectory_file, "ou", diff_type, dt, T, n, sigma, None, lambda_val, theta_val, None, noise_sigma]],
+        trajectory_vector.to_csv(os.path.join(path_to_save, simulation_folder, 
+                                              "Trajectories", name_of_trajectory_file))
+        stats_data_mini = pd.DataFrame([[name_of_trajectory_file, "ou", diff_type, dt, T, 
+                                         n, sigma, None, (lambda_x, lambda_y), (theta_x, theta_y), None, noise_sigma]],
             columns=col_for_stats)
         stats_data = pd.concat([stats_data, stats_data_mini], ignore_index=True)
-    stats_data.to_csv(os.path.join(path_to_save, simulation_folder, "Trajectories_Stats", diff_type+"_ou.csv"))
+    stats_data.to_csv(os.path.join(path_to_save, simulation_folder, "Trajectories_Stats", 
+                                   diff_type+"_ou.csv"))
 
 
 def generate_directed(number_of_spt, path_to_save, simulation_folder, length_of_trajectory,
@@ -107,23 +111,28 @@ def generate_directed(number_of_spt, path_to_save, simulation_folder, length_of_
     """
     stats_data = pd.DataFrame([], columns=col_for_stats)
     for i in range(number_of_spt):
-        we_val = np.random.uniform(we_range[0], we_range[1])
+        we_x_range = np.random.randint(0,len(we_range)) # 0 or 0,1
+        we_x = np.random.uniform(we_range[we_x_range][0], we_range[we_x_range][1])
+        we_y_range = np.random.randint(0,len(we_range)) # 0 or 0,1
+        we_y = np.random.uniform(we_range[we_y_range][0], we_range[we_y_range][1])
         path_to_data = os.path.dirname(path_to_save)
         n = get_length_of_trajectory(is_distribution_of_selection_known, length_of_trajectory, 
                                      distribution_filename, path_to_data)
         T = (n - 1) * dt
-        x_dir, y_dir = directed_bm_generator(n, (we_val, we_val), sigma, dt)
+        x_dir, y_dir = directed_bm_generator(n, (we_x, we_y), sigma, dt)
         x_rand, y_rand = generate_noise(length=len(x_dir), n_sigma=noise_sigma)
         x = x_dir + x_rand
         y = y_dir + y_rand
         trajectory_vector = pd.DataFrame({"x": x, "y": y})
         name_of_trajectory_file = diff_type+"_directed_" + str(i) + ".txt"
-        trajectory_vector.to_csv(os.path.join(path_to_save, simulation_folder, "Trajectories", name_of_trajectory_file))
-        stats_data_mini = pd.DataFrame(
-            [[name_of_trajectory_file, "directed", diff_type, dt, T, n, sigma, None, None, None, we_val, noise_sigma]],
+        trajectory_vector.to_csv(os.path.join(path_to_save, simulation_folder, 
+                                              "Trajectories", name_of_trajectory_file))
+        stats_data_mini = pd.DataFrame([[name_of_trajectory_file, "directed", diff_type, 
+                                         dt, T, n, sigma, None, None, None, (we_x, we_y), noise_sigma]],
             columns=col_for_stats)
         stats_data = pd.concat([stats_data, stats_data_mini], ignore_index=True)
-    stats_data.to_csv(os.path.join(path_to_save, simulation_folder, "Trajectories_Stats", diff_type+"_directed.csv"))
+    stats_data.to_csv(os.path.join(path_to_save, simulation_folder, "Trajectories_Stats", 
+                                   diff_type+"_directed.csv"))
 
 
 def get_length_of_trajectory(is_distribution_of_selection_known, length_of_trajectory, 

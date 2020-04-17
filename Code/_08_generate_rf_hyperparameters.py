@@ -52,5 +52,4 @@ def search_hyperparameters(simulation_folder, test_version=''):
 
 if __name__ == "__main__":
     
-    search_hyperparameters(simulation_folder="Base", test_version='_Wagner')
-    search_hyperparameters(simulation_folder="Smaller", test_version='_Wagner')
+    search_hyperparameters(simulation_folder="Base_corr", test_version='_Wagner')
