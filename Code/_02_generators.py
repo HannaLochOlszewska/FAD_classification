@@ -7,7 +7,7 @@ import pandas as pd
 from _01_processes import fbm_generator, ou_generator, directed_bm_generator
 
 dt = 1
-sigma = 1
+sigma = 1 # np.sqrt(2*0.0020204928267795593) # 2 * median of D in Beethoven data calculated via Characteristic Three
 N = [50, 500]
 noise_sigma = 0
 

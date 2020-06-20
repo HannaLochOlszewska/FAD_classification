@@ -30,7 +30,7 @@ def generate_trajectories(simulation_folder, N=5000):
         os.makedirs(os.path.join(path_to_save, simulation_folder, "Trajectories"))
 
     ### Generate fbm
-    c = 0.1
+    c = 0
     H_sub = [0.1, 0.5 - c - EPS]
     H_free = [0.5 - c, 0.5 + c]
     H_super = [0.5 + c + EPS, 0.9]
@@ -54,7 +54,7 @@ def generate_trajectories(simulation_folder, N=5000):
     print("Superdiffusion via fBm generated.")
 
     ### Generate Ornstein-Uhlenbeck
-    c = 0.1
+    c = 0
     theta = [0, 0]
     lambda_sub = [0 + c + EPS, 1]
     lambda_free = [0, 0 + c]
@@ -73,7 +73,7 @@ def generate_trajectories(simulation_folder, N=5000):
     print("Free diffusion via OU generated.")
     
     ### Generate directed Brownian motion
-    c = 0.1    
+    c = 0   
     # HINT: the range for v parameter is divided for two parts to allow the choice of 
     # superdiffusion parameter around 0 - negative or positive - we pass the list of list for easy choice.
     we_free = [[0 - c, 0 + c]]
@@ -115,5 +115,5 @@ def join_initial_datasets(simulation_folder):
 
 if __name__ == "__main__":
 
-    generate_trajectories(simulation_folder="Base_corr", N=20000)
-    join_initial_datasets(simulation_folder="Base_corr")
+    generate_trajectories(simulation_folder="Zero_free", N=20000)
+    join_initial_datasets(simulation_folder="Zero_free")
