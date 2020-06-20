@@ -35,7 +35,7 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
                                                 "Characteristics"+test_version)
     path_to_scenario = os.path.join(project_directory, "Models", featured_model,
                                     simulation_folder, "Model"+test_version)
-    path_to_stats = os.path.join(path_to_scenario, "Stats")
+    path_to_stats = os.path.join(path_to_scenario, "Stats")  #"C:\\Hania\\Praca\\TeX\\Notatki-klasyfikatory"
     if not os.path.exists(path_to_stats):
         os.makedirs(path_to_stats)
     path_to_model = os.path.join(path_to_scenario, "model.sav")
@@ -65,14 +65,15 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
         plt.close()
 
         # Plot normalized confusion matrix
-        fig = plt.figure()
-        plot_confusion_matrix(cm, classes=labelencoder.classes_, normalize=True, title='Normalized confusion matrix')
+        fig = plt.figure()+        vers = "no D" if "_noD" in test_version else "with D"
+        plot_confusion_matrix(cm, classes=labelencoder.classes_, normalize=True, title=featured_model+", "+vers)
+#        plot_confusion_matrix(cm, classes=labelencoder.classes_, normalize=True, title='Normalized confusion matrix')
         fig.savefig(os.path.join(path_to_stats, "Confusion_Matrix_Normalized_" + dt + ".pdf"), dpi=fig.dpi)
         plt.close()
 
         # class report
         print("class report")
-        report = classification_report(y, y_pred, target_names=labelencoder.classes_)
+        report = classification_report(y, y_pred, target_names=labelencoder.classes_, digits=3)
         report = pandas_classification_report(report)
         report.to_csv(os.path.join(path_to_stats, "Classification_Report_" + dt + ".csv"))
 
@@ -85,7 +86,10 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
 
     # feature importances
     importances = model.feature_importances_  
-    column_names = characteristics_data.drop(["file", "motion", "diff_type"], axis=1).columns.values
+    if "_noD" in test_version:
+        column_names = characteristics_data.drop(["file", "motion", "diff_type", "D"], axis=1).columns.values
+    else:
+        column_names = characteristics_data.drop(["file", "motion", "diff_type"], axis=1).columns.values    
     df = imp_df(column_names, importances)
     df.to_csv(os.path.join(path_to_stats, "Feature_importances.csv"), index=False)
     

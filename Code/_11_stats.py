@@ -9,8 +9,8 @@ import re
 from io import StringIO
 
 import matplotlib
-matplotlib.rc('font', serif='Helvetica Neue')
-font = 15
+matplotlib.rc('font', **{'family':'sans-serif','sans-serif':['Arial']})#,'size':20})
+font = 20
 lw = 1
 ms=7
 lw2 = 1
@@ -39,7 +39,8 @@ def plot_confusion_matrix(cm, classes,
 
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title, fontsize=font)
-    plt.colorbar()
+    cbar = plt.colorbar()
+    cbar.ax.tick_params(labelsize=font)
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45, fontsize=font)
     plt.yticks(tick_marks, classes, fontsize=font)
@@ -89,13 +90,11 @@ def drop_col_feat_imp(model, X_train, y_train, random_state = 42):
     
     # iterating over all columns and storing feature importance (difference between benchmark and new model)
     for col in X_train.columns:
-        print(col)
         model_clone = clone(model)
         model_clone.random_state = random_state
         model_clone.fit(X_train.drop(col, axis = 1), y_train)
         drop_col_score = model_clone.score(X_train.drop(col, axis = 1), y_train)
         importances.append(benchmark_score - drop_col_score)
-        print(benchmark_score - drop_col_score)
     
     importances_df = imp_df(X_train.columns, importances)
     return importances_df
