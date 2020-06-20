@@ -426,32 +426,3 @@ class CharacteristicThree(CharacteristicTwo):
         ts = d_max/np.sqrt(sigma_2 * self.T)
 
         return ts
-    
-    
-class CharacteristicFour(CharacteristicThree):
-    """
-    Test set
-    """
-    
-    def __init__(self, x, y, dt, percentage_max_n=0.1, typ="", motion="", file=""):
-        """
-        :param x: list, x coordinates
-        :param y: list, y coordinates
-        :param dt: float, time between steps
-        :param typ: str, type of diffusion i.e sub, super, rand
-        :param motion: str, mode of diffusion eg. normal, directed
-        :param file: str, path to trajectory
-        :param percentage_max_n: float, percentage of length of the trajectory for msd generating
-        """
-        
-        CharacteristicThree.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
-              
-        
-        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha, 
-                       self.efficiency, self.mean_squared_displacement_ratio, self.straightness, 
-                       self.max_excursion_normalised] + list(self.velocity_autocorrelation) + list(self.p_variations)
-        self.columns = ["file", "diff_type", "motion", "D", "alpha", 
-                        "efficiency", "mean_squared_displacement_ratio", "straightness", 
-                        "max_excursion_normalised"] + self.velocity_autocorrelation_names + self.p_variation_names
-        
-        self.data = pd.DataFrame([self.values], columns=self.columns)        
