@@ -1,19 +1,25 @@
-import matplotlib.pyplot as plt
-
-import numpy as np
 import itertools
-import pandas as pd
-from sklearn.base import clone
-from sklearn.metrics import accuracy_score
 import re
 from io import StringIO
 
 import matplotlib
-matplotlib.rc('font', **{'family':'sans-serif','sans-serif':['Arial']})#,'size':20})
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.base import clone
+from sklearn.metrics import accuracy_score
+
+
+matplotlib.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Arial']})
 font = 20
 lw = 1
-ms=7
+ms = 7
 lw2 = 1
+
+"""
+Functions for generating models' statistics.
+"""                                               
+
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -44,7 +50,7 @@ def plot_confusion_matrix(cm, classes,
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45, fontsize=font)
     plt.yticks(tick_marks, classes, fontsize=font)
-    plt.xlim([-0.5,0.5+max(tick_marks)])
+    plt.xlim([-0.5, 0.5 + max(tick_marks)])
     plt.ylim([-0.5, 0.5 + max(tick_marks)])
 
     fmt = '.2f' if normalize else 'd'
@@ -70,14 +76,30 @@ def pandas_classification_report(report):
     report_df = pd.read_csv(StringIO("Classes" + report), sep=' ', index_col=0)
     return report_df
 
+
+def accuracy(rf, X_train, y_train):
+    """
+    Calculates the accuracy of a model.
+    :return: accuracy score of a model.
+    """
+    return accuracy_score(y_train, rf.predict(X_train))
+
+
 def imp_df(column_names, importances):
-    df = pd.DataFrame({'feature': column_names, 'feature_importance': importances}).sort_values('feature_importance', 
-                     ascending = False).reset_index(drop = True)
+    """
+    Transforms features importances into dataframe object.
+    :return: DataFrame
+    """
+    df = pd.DataFrame({'feature': column_names, 'feature_importance': importances}).sort_values('feature_importance',
+                                                                                                ascending = False).reset_index(drop = True)
     return df
 
 
-def drop_col_feat_imp(model, X_train, y_train, random_state = 42):
-        
+def drop_col_feat_imp(model, X_train, y_train, random_state=42):
+    """
+    Function calculating drop column importances of a model.
+    :return: DataFrame with drop column feature importances
+    """
     # clone the model to have the exact same specification as the one initially trained
     model_clone = clone(model)
     # set random_state for comparability
@@ -87,17 +109,14 @@ def drop_col_feat_imp(model, X_train, y_train, random_state = 42):
     benchmark_score = model_clone.score(X_train, y_train)
     # list for storing feature importances
     importances = []
-    
+
     # iterating over all columns and storing feature importance (difference between benchmark and new model)
     for col in X_train.columns:
         model_clone = clone(model)
         model_clone.random_state = random_state
-        model_clone.fit(X_train.drop(col, axis = 1), y_train)
-        drop_col_score = model_clone.score(X_train.drop(col, axis = 1), y_train)
+        model_clone.fit(X_train.drop(col, axis=1), y_train)
+        drop_col_score = model_clone.score(X_train.drop(col, axis=1), y_train)
         importances.append(benchmark_score - drop_col_score)
-    
+
     importances_df = imp_df(X_train.columns, importances)
     return importances_df
-
-def accuracy(rf, X_train, y_train):
-    return accuracy_score(y_train, rf.predict(X_train))

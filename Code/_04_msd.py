@@ -1,6 +1,9 @@
 from math import log
 import numpy as np
 
+"""
+The helper functions used in characteristics calculation.
+"""
 
 def generate_theoretical_msd_normal(n_list, D, dt):
     """
@@ -29,11 +32,11 @@ def generate_theoretical_msd_anomalous(n_list, D, dt, alpha):
 
 def generate_theoretical_msd_anomalous_log(log_dt_n_list, log_D, alpha):
     """
-    Function for generating msd of anomalous diffusion
+    Function for generating logarithm msd of anomalous diffusion
     :param log_dt_n_list: logarithm of points in msd times dt
     :param log_D: float, logarithm of diffusion coefficient
     :param alpha: float, anomalous exponent (alpha<1)
-    :return: array of theoretical msd
+    :return: array of logarithm theoretical msd
     """
     r = log(4) + log_D + alpha * log_dt_n_list
     return r
@@ -41,6 +44,7 @@ def generate_theoretical_msd_anomalous_log(log_dt_n_list, log_D, alpha):
 
 def generate_empirical_msd(x, y, n_list, k=2):
     """
+    Function for generating empirical msd for a list of lags
     :param x: list, list of x coordinates
     :param y: list, list of y coordinates
     :param n_list: number of points in msd
@@ -55,7 +59,7 @@ def generate_empirical_msd(x, y, n_list, k=2):
 
 def empirical_msd(x, y, n, k):
     """
-    Function for generating empirical msd, where N is number of positions
+    Function for generating empirical msd for a single lag
     :param x: list, list of x coordinates
     :param y: list, list of y coordinates
     :param n: int, point of msd
@@ -67,8 +71,7 @@ def empirical_msd(x, y, n, k):
     x2 = np.array(x[n:N])
     y1 = np.array(y[:N - n])
     y2 = np.array(y[n:N])
-    c = np.array(list(x2 - x1)) ** 2 + np.array(list(y2 - y1)) ** k
-    # sqrt z normy redukuje sie z ^2 we wzorze
+    c = np.array(list(x2 - x1)) ** k + np.array(list(y2 - y1)) ** k
     r = np.mean(c)
     return r
 
@@ -76,7 +79,6 @@ def generate_empirical_pvariation(x, y, p_list=[2], m_list=[1]):
     """
     :param x: list, list of x coordinates
     :param y: list, list of y coordinates
-    :param n_list: number of points in msd
     :param p_list: powers of p-variation, default p=[2] - quadratic variation
     :param m_list: the choice of lags, default m=[1] - simple differences
     :return: array of empirical pvariation
@@ -96,6 +98,7 @@ def generate_empirical_pvariation(x, y, p_list=[2], m_list=[1]):
 
 def generate_empirical_velocity_autocorrelation(x, y, n_list, dt, delta=1):
     """
+    Function for generating empirical autocorrelation for the given list of points
     :param x: list, list of x coordinates
     :param y: list, list of y coordinates
     :param n_list: list, number of points in autocorrelation
@@ -111,7 +114,7 @@ def generate_empirical_velocity_autocorrelation(x, y, n_list, dt, delta=1):
 
 def empirical_velocity_autocorrelation(x, y, n, dt, delta):
     """
-    Function for generating empirical autocorrelation, where N is number of positions
+    Function for generating empirical autocorrelation for single point
     :param x: list, list of x coordinates
     :param y: list, list of y coordinates
     :param n: int, point of autocorrelation

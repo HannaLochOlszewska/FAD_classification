@@ -1,11 +1,9 @@
 import numpy as np
 from fbm import FBM
 
-# TODO: zamienić fbm na stochastic, żeby ładować jeden pakiet
-# from stochastic.continuous import FractionalBrownianMotion
-
 from stochastic.diffusion import OrnsteinUhlenbeckProcess
 
+"""This file contains a functions which generates 2D vectors with different type of motions"""
 
 def fbm_generator(N, H, sigma=1.0, dt=1.0):
     """
@@ -21,6 +19,7 @@ def fbm_generator(N, H, sigma=1.0, dt=1.0):
     x = f.fbm() * sigma
     y = f.fbm() * sigma
     return x[:N], y[:N]
+
 
 def ou_generator(N, lmbd, theta, sigma=1.0, dt=1.0):
     """
@@ -39,6 +38,7 @@ def ou_generator(N, lmbd, theta, sigma=1.0, dt=1.0):
     y = s_y.sample(N)
     return x[:N], y[:N]
 
+
 def directed_bm_generator(N, we, sigma=1.0, dt=1.0):
     """
     Function generates the 2D vector of Ornstein-Uhlenbeck process
@@ -50,6 +50,6 @@ def directed_bm_generator(N, we, sigma=1.0, dt=1.0):
     """
     T = N * dt
     f = FBM(n=int(N), hurst=0.5, length=T, method='daviesharte')
-    x = f.fbm() * sigma + np.linspace(0, T, N+1) * we[0]
-    y = f.fbm() * sigma + np.linspace(0, T, N+1) * we[1]
+    x = f.fbm() * sigma + np.linspace(0, T, N + 1) * we[0]
+    y = f.fbm() * sigma + np.linspace(0, T, N + 1) * we[1]
     return x[:N], y[:N]

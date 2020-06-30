@@ -4,12 +4,11 @@ from datetime import datetime
 import joblib
 import matplotlib.pyplot as plt
 import numpy as np
-
 import pandas as pd
+from rfpimp import permutation_importances
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.base import clone
-from rfpimp import permutation_importances
 
 from _11_stats import plot_confusion_matrix, pandas_classification_report, \
                       imp_df, drop_col_feat_imp, accuracy
@@ -20,11 +19,16 @@ np_load_old = np.load
 # modify the default parameters of np.load
 np.load = lambda *a, **k: np_load_old(*a, allow_pickle=True, **k)
 
+"""
+Module that generates statistics of the trained model.
+"""
+
 def generate_stats(simulation_folder, featured_model="RF", test_version=''):
     """
     Function for generating statistics about model
-    :param scenario: "Old" or other if defined
-    :param featured_model: "RF", "GB" or other id defined
+    :param simulation_folder: str, name of subfolder for given set simulation
+    :param featured_model: "RF", "GB" or other if defined
+    :param test_version: str, name of subsubfolder for given characteristic sets
     :return: statistics
     """
 
@@ -32,10 +36,10 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
     project_directory = os.path.dirname(os.getcwd())
     path_to_data = os.path.join(project_directory, "Data", "Synthetic data")
     path_to_characteristics_data = os.path.join(path_to_data, simulation_folder,
-                                                "Characteristics"+test_version)
+                                                "Characteristics" + test_version)
     path_to_scenario = os.path.join(project_directory, "Models", featured_model,
-                                    simulation_folder, "Model"+test_version)
-    path_to_stats = os.path.join(path_to_scenario, "Stats")  #"C:\\Hania\\Praca\\TeX\\Notatki-klasyfikatory"
+                                    simulation_folder, "Model" + test_version)
+    path_to_stats = os.path.join(path_to_scenario, "Stats")
     if not os.path.exists(path_to_stats):
         os.makedirs(path_to_stats)
     path_to_model = os.path.join(path_to_scenario, "model.sav")
@@ -58,16 +62,17 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
         y_pred = model.predict(X)
         cm = confusion_matrix(y, y_pred)
 
+        vers = "no D" if "_noD" in test_version else "with D"
+
         # Plot non-normalized confusion matrix
         fig = plt.figure()
-        plot_confusion_matrix(cm, classes=labelencoder.classes_, title='Confusion matrix, without normalization')
+        plot_confusion_matrix(cm, classes=labelencoder.classes_, title=featured_model+ ", " +vers)
         fig.savefig(os.path.join(path_to_stats, "Confusion_Matrix_NotNormalized_" + dt + ".pdf"), dpi=fig.dpi)
         plt.close()
 
         # Plot normalized confusion matrix
-        fig = plt.figure()+        vers = "no D" if "_noD" in test_version else "with D"
-        plot_confusion_matrix(cm, classes=labelencoder.classes_, normalize=True, title=featured_model+", "+vers)
-#        plot_confusion_matrix(cm, classes=labelencoder.classes_, normalize=True, title='Normalized confusion matrix')
+        fig = plt.figure()
+        plot_confusion_matrix(cm, classes=labelencoder.classes_, normalize=True, title=featured_model+ ", " +vers)
         fig.savefig(os.path.join(path_to_stats, "Confusion_Matrix_Normalized_" + dt + ".pdf"), dpi=fig.dpi)
         plt.close()
 
@@ -82,29 +87,26 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
         acu = accuracy_score(y, y_pred)
         df = pd.DataFrame({'acc': [acu]})
         df.to_csv(os.path.join(path_to_stats, "Accuracy_" + dt + ".csv"))
-        
 
     # feature importances
-    importances = model.feature_importances_  
+    importances = model.feature_importances_
     if "_noD" in test_version:
         column_names = characteristics_data.drop(["file", "motion", "diff_type", "D"], axis=1).columns.values
     else:
-        column_names = characteristics_data.drop(["file", "motion", "diff_type"], axis=1).columns.values    
+        column_names = characteristics_data.drop(["file", "motion", "diff_type"], axis=1).columns.values
     df = imp_df(column_names, importances)
     df.to_csv(os.path.join(path_to_stats, "Feature_importances.csv"), index=False)
-    
-    
+
     # permutation importances
     X_train_df = pd.DataFrame(X_train, columns=column_names)
     y_train_df = pd.DataFrame(y_train)
     df = permutation_importances(clone(model), X_train_df, y_train_df, accuracy)
     df.to_csv(os.path.join(path_to_stats, "Permutation_fi.csv"), index=True)
-    
+
     # drop column feature importance
-#    # FIX: after change X_train etc. to contain data names, change the snippet here
-#    X_train_df = pd.DataFrame(X_train, columns=column_names)
-#    df = drop_col_feat_imp(model, X_train_df, y_train)
-#    df.to_csv(os.path.join(path_to_stats, "Drop_column_fi.csv"), index=False)
+    X_train_df = pd.DataFrame(X_train, columns=column_names)
+    df = drop_col_feat_imp(model, X_train_df, y_train)
+    df.to_csv(os.path.join(path_to_stats, "Drop_column_fi.csv"), index=False)
 
     End = datetime.now()
     ExecutedTime = End - Start
@@ -114,8 +116,8 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
 
 
 if __name__ == "__main__":
-
-    generate_stats(simulation_folder="Base_corr", featured_model='GB', test_version='_best_old')
+    generate_stats(simulation_folder="Base_corr", featured_model='RF', test_version='_sta_10')
+    generate_stats(simulation_folder="Base_corr", featured_model='GB', test_version='_sta_10')
 
     # restore np.load for future normal usage
     np.load = np_load_old

@@ -1,5 +1,4 @@
 import math
-
 import numpy as np
 import pandas as pd
 from numpy import log, mean, sqrt, where, std, exp, sign
@@ -10,10 +9,16 @@ from sklearn.linear_model import LinearRegression
 from _04_msd import generate_theoretical_msd_normal, generate_empirical_msd, \
                     generate_theoretical_msd_anomalous_log, generate_empirical_pvariation, \
                     generate_empirical_velocity_autocorrelation
+                    
+"""
+Classes of characteristics sets.
+"""
 
 class CharacteristicBase:
     """
-    Class representing base characteristics of given trajectory
+    Class representing base characteristics of given trajectory, based on T. Wagner et al.
+    "Classification and Segmentation of Nanoparticle Diffusion Trajectories in Cellular Micro Environments"
+    PLoS ONE 12(1), (2017).    
     """
 
     def __init__(self, x, y, dt, percentage_max_n, typ="", motion="", file=""):
@@ -116,8 +121,8 @@ class Characteristic(CharacteristicBase):
         :param file: str, path to trajectory
         :param percentage_max_n: float, percentage of length of the trajectory for msd generating
         """
-        
-        CharacteristicBase.__init__(self,x, y, dt, percentage_max_n, typ, motion, file)    
+
+        CharacteristicBase.__init__(self,x, y, dt, percentage_max_n, typ, motion, file)
 
         self.D = self.get_diffusion_coef()
         self.alpha = self.get_exponent_alpha()
@@ -134,7 +139,7 @@ class Characteristic(CharacteristicBase):
         self.mean_squared_displacement_ratio = self.get_mean_squared_displacement_ratio()
         self.straightness = self.get_straightness()
         self.values = [self.file, self.type, self.motion, self.D, self.alpha, self.asymmetry, self.efficiency,
-                       self.fractal_dimension, self.mean_gaussianity, self.diff_kurtosis, 
+                       self.fractal_dimension, self.mean_gaussianity, self.diff_kurtosis,
                        self.mean_squared_displacement_ratio, self.straightness, self.trappedness]
         self.columns = ["file", "diff_type", "motion", "D", "alpha", "asymmetry", "efficiency", "fractal_dimension",
                         "mean_gaussianity", "diff_kurtosis", "mean_squared_displacement_ratio", "straightness",
@@ -207,7 +212,7 @@ class Characteristic(CharacteristicBase):
         p = 1 - exp(0.2048 - 0.25117 * ((d * t) / (self.d / 2) ** 2))
         p = np.array([i if i > 0 else 0 for i in p])[n]
         return p
-    
+
     def get_kurtosis_corrected(self):
         """
         Kurtosis measures the asymmetry and peakedness of the distribution of points within a trajectory
@@ -277,11 +282,14 @@ class Characteristic(CharacteristicBase):
         S = upper / lower
         return S
 
-class CharacteristicTwo(Characteristic):
+
+class CharacteristicThree(Characteristic):
     """
-    Characteristics empirically chosen as better than previously used
+    Characteristics corresponding to the article of A. Weron et al.
+    "Statistical testing approach for fractional anomalous diffusion classification"
+    PRE 99, 042149 (2019).
     """
-    
+
     def __init__(self, x, y, dt, percentage_max_n=0.1, typ="", motion="", file=""):
         """
         :param x: list, x coordinates
@@ -292,24 +300,19 @@ class CharacteristicTwo(Characteristic):
         :param file: str, path to trajectory
         :param percentage_max_n: float, percentage of length of the trajectory for msd generating
         """
-        
-        Characteristic.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
-        
-        self.D_new = self.estimate_diffusion_coef()
-        self.velocity_autocorrelation, self.velocity_autocorrelation_names = self.get_velocity_autocorrelation([1])
-        self.p_variation = self.get_feature_from_pvariation()
-        self.max_excursion_normalised = self.get_max_excursion()
-        
-        
-        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha, 
-                       self.efficiency, self.mean_squared_displacement_ratio, self.straightness, 
-                       self.p_variation, self.max_excursion_normalised] + list(self.velocity_autocorrelation)
-        self.columns = ["file", "diff_type", "motion", "D", "alpha", 
-                        "efficiency", "mean_squared_displacement_ratio", "straightness", 
-                        "p-variation", "max_excursion_normalised"] + self.velocity_autocorrelation_names
-        
-        self.data = pd.DataFrame([self.values], columns=self.columns)        
 
+        Characteristic.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
+
+        self.D_new = self.estimate_diffusion_coef()
+        self.p_variations, self.p_variation_names = self.get_pvariation_test(p_list=np.arange(1, 6))
+        self.maximum_ts = self.get_maximum_test_statistic()
+
+        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha,
+                       self.maximum_ts] + list(self.p_variations)
+        self.columns = ["file", "diff_type", "motion", "D", "alpha",
+                        "max_ts"] + self.p_variation_names
+
+        self.data = pd.DataFrame([self.values], columns=self.columns)
 
     def estimate_diffusion_coef(self):
         """
@@ -321,88 +324,19 @@ class CharacteristicTwo(Characteristic):
         tau = np.log((self.dt * self.n_list)).reshape((-1, 1))
         model = LinearRegression().fit(tau, log_msd)
         log_d = model.intercept_
-        D = math.exp(log_d)/4
+        D = math.exp(log_d) / 4
         return D
-    
-    def get_velocity_autocorrelation(self, hc_lag_list):
-        """
-        Calculate the velocity autocorrelation
-        :return: float, the empirical autocorrelation for lag 1.
-        """
-        #hc_lag_list = [1,2,3,4,5]
-        titles = ["vac_lag_"+str(x) for x in hc_lag_list]
-        autocorr = generate_empirical_velocity_autocorrelation(self.x, self.y, hc_lag_list, self.dt, delta=1)
-        return autocorr,titles
-    
-    def get_feature_from_pvariation(self):
-        """
-        Calculate p_variation with preset p and m choice and return the 
-        """        
-        p_list = [1/H for H in np.arange(0.1, 1.0, 0.1)]
-        m_list = list(range(1, 11))
-        p_var_matrix = generate_empirical_pvariation(self.x, self.y, p_list, m_list)
-        
-        m_array = np.array(m_list).reshape(-1, 1)
-        p_var_d = [LinearRegression().fit(m_array,p_var_matrix[p_index]).coef_[0] for p_index in range(len(p_list))]
-        signs_p = np.nonzero(np.diff([sign(val) for val in p_var_d]))
-        
-        if len(signs_p[0]) > 0:
-            p_var_info = signs_p[0][0]*sign(p_var_d[0])
-        else:
-            p_var_info = 0
-        
-        return p_var_info
-    
-    def get_total_displacement(self):
-        """
-        The total displacement of the trajectory
-        :return: float, the total displacement of a trajectory
-        """
-        total_displacement = self.get_displacement(self.x[self.N - 1], self.y[self.N - 1], self.x[0], self.y[0]) 
-        return total_displacement
-    
-    def get_max_excursion(self):
-        """
-        The maximal excursion of the particle, normalised to its total displacement (range of movement)
-        :return: float, max excursion
-        """
-        excursion = self.d / self.get_total_displacement()
-        return excursion
-    
-class CharacteristicThree(CharacteristicTwo):
-    """
-    Characteristics empirically chosen as better than previously used
-    """
-    
-    def __init__(self, x, y, dt, percentage_max_n=0.5, typ="", motion="", file=""):
-        """
-        :param x: list, x coordinates
-        :param y: list, y coordinates
-        :param dt: float, time between steps
-        :param typ: str, type of diffusion i.e sub, super, rand
-        :param motion: str, mode of diffusion eg. normal, directed
-        :param file: str, path to trajectory
-        :param percentage_max_n: float, percentage of length of the trajectory for msd generating
-        """
-        
-        CharacteristicTwo.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
 
-        
-        self.p_variations, self.p_variation_names = self.get_pvariation_test(p_list=np.arange(1,6))
-        self.maximum_ts = self.get_maximum_test_statistic()
-        
-        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha, 
-                       self.maximum_ts] + list(self.p_variations)
-        self.columns = ["file", "diff_type", "motion", "D", "alpha", 
-                        "max_ts"] + self.p_variation_names
-        
-        self.data = pd.DataFrame([self.values], columns=self.columns)
-    
     def get_pvariation_test(self, p_list):
-        
-        max_m = int(max(0.01*self.N,5))
-        m_list = np.arange(1, max_m+1)
-        
+        """
+        :param p_list: list, p-values for calculation of p-variation
+        :return: tuple with list of values and list of strings,
+        the list of powers fitted to the calculated p-variations
+        and list of the corresponding feature names
+        """
+        max_m = int(max(0.01 * self.N, 5))
+        m_list = np.arange(1, max_m + 1)
+
         test_values = []
         p_var = generate_empirical_pvariation(self.x, self.y, p_list, m_list)
         for i in range(len(p_list)):
@@ -410,48 +344,20 @@ class CharacteristicThree(CharacteristicTwo):
             gamma_power_fit = LinearRegression().fit(np.log(m_list).reshape(-1, 1), np.log(pv))
             gamma = gamma_power_fit.coef_[0]
             test_values.append(gamma)
-            
-        feature_names = ['p_var_'+str(p) for p in p_list]
-            
+
+        feature_names = ['p_var_' + str(p) for p in p_list]
+
         return test_values, feature_names
-    
-                        
+
     def get_maximum_test_statistic(self):
-        
+        """
+        :return: float, the value of the maximum test statistics
+        """
         distance = np.array(
             [self.get_displacement(self.x[i], self.y[i], self.x[0], self.y[0]) for i in range(1, self.N)])
         d_max = np.max(distance)
         # TODO: The sigma estimator can be improved (Briane et al., 2018)
-        sigma_2 = 1/(2 * (self.N-1) * self.dt) * np.sum(self.displacements ** 2)       
-        ts = d_max/np.sqrt(sigma_2 * self.T)
+        sigma_2 = 1 / (2 * (self.N - 1) * self.dt) * np.sum(self.displacements ** 2)
+        ts = d_max / np.sqrt(sigma_2 * self.T)
 
         return ts
-    
-    
-class CharacteristicFour(CharacteristicThree):
-    """
-    Test set
-    """
-    
-    def __init__(self, x, y, dt, percentage_max_n=0.1, typ="", motion="", file=""):
-        """
-        :param x: list, x coordinates
-        :param y: list, y coordinates
-        :param dt: float, time between steps
-        :param typ: str, type of diffusion i.e sub, super, rand
-        :param motion: str, mode of diffusion eg. normal, directed
-        :param file: str, path to trajectory
-        :param percentage_max_n: float, percentage of length of the trajectory for msd generating
-        """
-        
-        CharacteristicThree.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
-              
-        
-        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha, 
-                       self.efficiency, self.mean_squared_displacement_ratio, self.straightness, 
-                       self.max_excursion_normalised] + list(self.velocity_autocorrelation) + list(self.p_variations)
-        self.columns = ["file", "diff_type", "motion", "D", "alpha", 
-                        "efficiency", "mean_squared_displacement_ratio", "straightness", 
-                        "max_excursion_normalised"] + self.velocity_autocorrelation_names + self.p_variation_names
-        
-        self.data = pd.DataFrame([self.values], columns=self.columns)        
