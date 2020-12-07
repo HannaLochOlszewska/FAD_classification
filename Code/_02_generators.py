@@ -40,8 +40,9 @@ def generate_fbm(number_of_spt, path_to_save, simulation_folder, length_of_traje
         n = get_length_of_trajectory(is_distribution_of_selection_known, length_of_trajectory,
                                      distribution_filename, path_to_data)
         T = (n - 1) * dt
+        #sigma = np.sqrt(2*np.random.uniform(1,9))
         x_fbm, y_fbm = fbm_generator(n, H, sigma, dt)
-        x_rand, y_rand, noise_sigma, snr = generate_noise(length=len(x_fbm),
+        x_rand, y_rand, noise_sigma, snr = generate_noise(length=len(x_fbm), D_sigma = sigma,
                                                           add_nonzero_noise=add_nonzero_noise)
         x = x_fbm + x_rand
         y = y_fbm + y_rand
@@ -84,8 +85,9 @@ def generate_ou(number_of_spt, path_to_save, simulation_folder, length_of_trajec
         n = get_length_of_trajectory(is_distribution_of_selection_known, length_of_trajectory,
                                      distribution_filename, path_to_data)
         T = (n - 1) * dt
+        #sigma = np.sqrt(2*np.random.uniform(1,9))
         x_ou, y_ou = ou_generator(n, (lambda_x, lambda_y), (theta_x, theta_y), sigma, dt)
-        x_rand, y_rand, noise_sigma, snr = generate_noise(length=len(x_ou), add_nonzero_noise=add_nonzero_noise)
+        x_rand, y_rand, noise_sigma, snr = generate_noise(length=len(x_ou), D_sigma = sigma, add_nonzero_noise=add_nonzero_noise)
         x = x_ou + x_rand
         y = y_ou + y_rand
         trajectory_vector = pd.DataFrame({"x": x, "y": y})
@@ -127,9 +129,10 @@ def generate_directed(number_of_spt, path_to_save, simulation_folder, length_of_
         n = get_length_of_trajectory(is_distribution_of_selection_known, length_of_trajectory,
                                      distribution_filename, path_to_data)
         T = (n - 1) * dt
+        #sigma = np.sqrt(2*np.random.uniform(1,9))
         x_dir, y_dir = directed_bm_generator(n, (we_x, we_y), sigma, dt)
         v = np.sqrt(we_x ** 2 + we_y ** 2)
-        x_rand, y_rand, noise_sigma, snr = generate_noise(length=len(x_dir), add_nonzero_noise=add_nonzero_noise,
+        x_rand, y_rand, noise_sigma, snr = generate_noise(length=len(x_dir), D_sigma = sigma, add_nonzero_noise=add_nonzero_noise,
                                                           is_direct_motion=True, v=v)
         x = x_dir + x_rand
         y = y_dir + y_rand
@@ -167,7 +170,7 @@ def get_length_of_trajectory(is_distribution_of_selection_known, length_of_traje
     return n
 
 
-def generate_noise(length, add_nonzero_noise=True, is_direct_motion=False, v=0):
+def generate_noise(length, D_sigma, add_nonzero_noise=True, is_direct_motion=False, v=0):
     """
     Function for generating vector of noises for simulated trajectories
     :param length: int, length of pure trajectory
@@ -176,9 +179,9 @@ def generate_noise(length, add_nonzero_noise=True, is_direct_motion=False, v=0):
     :param v, velocity for direct motion used in generating of sigma in randomly chosen noise scenario
     :return: 2D vector of noises, sigma noise and SNR parameters
     """
-    SNR = [5, 10]
+    SNR = [1, 9]
     snr = np.random.uniform(SNR[0], SNR[1])
-    D = sigma ** 2 / 2
+    D = D_sigma ** 2 / 2
     if add_nonzero_noise:
         if not is_direct_motion:
             n_sigma = np.sqrt(D * dt) / snr

@@ -4,7 +4,7 @@ from enum import Enum
 from itertools import repeat
 import pandas as pd
 
-from _05_characteristics import Characteristic, CharacteristicThree
+from _05_characteristics import Characteristic, CharacteristicThree, CharacteristicTwo
 
 """
 Characteristics generators.
@@ -31,7 +31,7 @@ def get_characteristics(char_set, path_to_file, dt, typ="", motion=""):
     x = data['x'].values
     y = data['y'].values
     if char_set == CharSet.One:
-        ch = Characteristic(x=x, y=y, dt=dt, percentage_max_n=1, typ=typ, motion=motion, file=path_to_file)
+        ch = Characteristic(x=x, y=y, dt=dt, percentage_max_n=0.1, typ=typ, motion=motion, file=path_to_file)
     elif char_set == CharSet.Two:
         ch = CharacteristicTwo(x=x, y=y, dt=dt, percentage_max_n=0.1, typ=typ, motion=motion, file=path_to_file)
     elif char_set == CharSet.Three:
@@ -91,4 +91,5 @@ def generate_characteristics(simulation_folder, test_version='', data_type="Synt
 
 if __name__ == "__main__":
 
-    generate_characteristics(simulation_folder="Base_corr", test_version='_sta_10', char_set=CharSet.Three)
+    generate_characteristics(simulation_folder="Base_corr", test_version='_best_old_new', char_set=CharSet.Two)
+    

@@ -22,7 +22,10 @@ def split_data(simulation_folder, test_version=''):
     path_to_characteristics_data = os.path.join(path_to_save, simulation_folder, "Characteristics" + test_version)
     file_with_characteristics = os.path.join(path_to_characteristics_data, "characteristics.csv")
     characteristics_data = pd.read_csv(file_with_characteristics)
-    characteristics_data = characteristics_data.drop(["file", "motion"], axis=1)
+    if "_noD" in test_version:
+        characteristics_data = characteristics_data.drop(["file", "motion", "D"], axis=1)
+    else:        
+        characteristics_data = characteristics_data.drop(["file", "motion"], axis=1)
     X = characteristics_data.loc[:, characteristics_data.columns != 'diff_type']
     y = characteristics_data["diff_type"]
     y_for_split = characteristics_data["diff_type"].values
@@ -42,4 +45,5 @@ def split_data(simulation_folder, test_version=''):
 
 if __name__ == "__main__":
 
-    split_data(simulation_folder="Base_corr", test_version='_sta_10')
+    split_data(simulation_folder="Base_corr", test_version='_best_old')
+    

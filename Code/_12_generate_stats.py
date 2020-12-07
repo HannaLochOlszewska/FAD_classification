@@ -115,9 +115,11 @@ def generate_stats(simulation_folder, featured_model="RF", test_version=''):
     print(ExecutedTime)
 
 
-if __name__ == "__main__":
-    generate_stats(simulation_folder="Base_corr", featured_model='RF', test_version='_sta_10')
-    generate_stats(simulation_folder="Base_corr", featured_model='GB', test_version='_sta_10')
-
+if __name__ == "__main__":    
+    generate_stats(simulation_folder="Base_corr", featured_model='RF', test_version='_best_old')
+    generate_stats(simulation_folder="Base_corr", featured_model='GB', test_version='_best_old')
+    generate_stats(simulation_folder="Base_corr", featured_model='RF', test_version='_best_old_noD')
+    generate_stats(simulation_folder="Base_corr", featured_model='GB', test_version='_best_old_noD')     
+    
     # restore np.load for future normal usage
     np.load = np_load_old

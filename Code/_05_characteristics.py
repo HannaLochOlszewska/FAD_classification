@@ -361,3 +361,86 @@ class CharacteristicThree(Characteristic):
         ts = d_max / np.sqrt(sigma_2 * self.T)
 
         return ts
+    
+    
+class CharacteristicTwo(CharacteristicThree):
+    """
+    A new set of characteristics, tailor-made for the classification of the movements
+    belonging to one of the 
+    The description and analysis to appear in: H. Loch-Olszewska, J. Szwabiński,
+    "Impact of feature choice on machine learning classification of fractional 
+    anomalous diffusion", Entropy.
+    """
+
+    def __init__(self, x, y, dt, percentage_max_n=0.1, typ="", motion="", file=""):
+        """
+        :param x: list, x coordinates
+        :param y: list, y coordinates
+        :param dt: float, time between steps
+        :param typ: str, type of diffusion i.e sub, super, rand
+        :param motion: str, mode of diffusion eg. normal, directed
+        :param file: str, path to trajectory
+        :param percentage_max_n: float, percentage of length of the trajectory for msd generating
+        """
+
+        CharacteristicThree.__init__(self, x, y, dt, percentage_max_n, typ, motion, file)
+
+        #self.D_new = self.estimate_diffusion_coef()
+        self.velocity_autocorrelation, self.velocity_autocorrelation_names = self.get_velocity_autocorrelation([1])
+        self.p_variation = self.get_feature_from_pvariation()
+        self.max_excursion_normalised = self.get_max_excursion()
+
+        self.values = [self.file, self.type, self.motion, self.D_new, self.alpha,
+                       self.efficiency, self.mean_squared_displacement_ratio, self.straightness,
+                       self.p_variation, self.max_excursion_normalised] + list(self.velocity_autocorrelation)
+        self.columns = ["file", "diff_type", "motion", "D", "alpha",
+                        "efficiency", "mean_squared_displacement_ratio", "straightness",
+                        "p-variation", "max_excursion_normalised"] + self.velocity_autocorrelation_names
+
+        self.data = pd.DataFrame([self.values], columns=self.columns)
+
+    def get_velocity_autocorrelation(self, hc_lag_list):
+        """
+        Calculate the velocity autocorrelation
+        :return: float, the empirical autocorrelation for lag 1.
+        """
+        # hc_lag_list = [1,2,3,4,5]
+        titles = ["vac_lag_" + str(x) for x in hc_lag_list]
+        autocorr = generate_empirical_velocity_autocorrelation(self.x, self.y, hc_lag_list, self.dt, delta=1)
+        return autocorr, titles
+
+    def get_feature_from_pvariation(self):
+        """
+        Calculate p_variation with preset p and m choice and return the 
+        """
+        p_list = [1/H for H in np.arange(0.1, 1.0, 0.1)]
+        m_list = list(range(1, 11))
+        p_var_matrix = generate_empirical_pvariation(self.x, self.y, p_list, m_list)
+
+        m_array = np.array(m_list).reshape(-1, 1)
+        p_var_d = [LinearRegression().fit(m_array, p_var_matrix[p_index]).coef_[0] for p_index in range(len(p_list))]
+        signs_p = np.nonzero(np.diff([sign(val) for val in p_var_d]))
+
+        if len(signs_p[0]) > 0:
+            p_var_info = signs_p[0][0] * sign(p_var_d[0])
+        else:
+            p_var_info = 0
+
+        return p_var_info
+
+    def get_total_displacement(self):
+        """
+        The total displacement of the trajectory
+        :return: float, the total displacement of a trajectory
+        """
+        total_displacement = self.get_displacement(self.x[self.N - 1], self.y[self.N - 1], self.x[0], self.y[0])
+        return total_displacement
+
+    def get_max_excursion(self):
+        """
+        The maximal excursion of the particle, normalised to its total displacement (range of movement)
+        :return: float, max excursion
+        """
+        excursion = self.d / self.get_total_displacement()
+        return excursion    
+

@@ -71,7 +71,7 @@ def empirical_msd(x, y, n, k):
     x2 = np.array(x[n:N])
     y1 = np.array(y[:N - n])
     y2 = np.array(y[n:N])
-    c = np.array(list(x2 - x1)) ** k + np.array(list(y2 - y1)) ** k
+    c = np.sqrt(np.array(list(x2 - x1)) ** 2 + np.array(list(y2 - y1)) ** 2)**k
     r = np.mean(c)
     return r
 
